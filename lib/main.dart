@@ -20,9 +20,17 @@ import 'screens/zakat_calculator_screen.dart';
 import 'screens/income_tax_calculator_screen.dart';
 import 'screens/retirement_calculator_screen.dart';
 import 'screens/emergency_fund_calculator_screen.dart';
+import 'package:animated_notch_bottom_bar/animated_notch_bottom_bar/animated_notch_bottom_bar.dart';
+import 'package:provider/provider.dart';
+import 'providers/theme_provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -30,20 +38,44 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Multi Calculator',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(),
-        '/home': (context) => const MyHomePage(),
-        '/zakat-calculator': (context) => const ZakatCalculatorScreen(),
-        '/income-tax-calculator': (context) => const IncomeTaxCalculatorScreen(),
-        '/retirement-calculator': (context) => const RetirementCalculatorScreen(),
-        '/emergency-fund-calculator': (context) => const EmergencyFundCalculatorScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Multi Calculator',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF2A2D3E),
+              primary: const Color(0xFF2A2D3E),
+              secondary: const Color(0xFF6C63FF),
+            ),
+            useMaterial3: true,
+            fontFamily: 'Poppins',
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF2A2D3E),
+              primary: const Color(0xFF2A2D3E),
+              secondary: const Color(0xFF6C63FF),
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+            fontFamily: 'Poppins',
+          ),
+          themeMode:
+              themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const SplashScreen(),
+            '/home': (context) => const MyHomePage(),
+            '/zakat-calculator': (context) => const ZakatCalculatorScreen(),
+            '/income-tax-calculator': (context) =>
+                const IncomeTaxCalculatorScreen(),
+            '/retirement-calculator': (context) =>
+                const RetirementCalculatorScreen(),
+            '/emergency-fund-calculator': (context) =>
+                const EmergencyFundCalculatorScreen(),
+          },
+        );
       },
     );
   }
@@ -57,7 +89,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 0;
+  final _pageController = PageController(initialPage: 0);
+  final _controller = NotchBottomBarController(index: 0);
 
   final List<Map<String, dynamic>> _pages = [
     {
@@ -205,94 +238,192 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade800,
-              Colors.blue.shade500,
-            ],
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          _buildPage(_pages[0]), // Konversi
+          _buildPage(_pages[1]), // Matematika
+          _buildPage(_pages[2]), // Kesehatan
+          _buildPage(_pages[3]), // Finansial
+        ],
+      ),
+      extendBody: true, // Penting untuk bottom bar yang transparan
+      bottomNavigationBar: AnimatedNotchBottomBar(
+        notchBottomBarController: _controller,
+        color: Colors.white,
+        showLabel: true,
+        notchColor: const Color.fromARGB(255, 37, 211, 255),
+        removeMargins: false,
+        bottomBarWidth: 500,
+        durationInMilliSeconds: 300,
+        kBottomRadius: 28.0,
+        kIconSize: 24,
+        bottomBarItems: [
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.swap_horiz_rounded,
+              color: Colors.grey[600],
+            ),
+            activeItem: const Icon(
+              Icons.swap_horiz_rounded,
+              color: Colors.white,
+            ),
+            itemLabel: 'Konversi',
           ),
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.calculate_rounded,
+              color: Colors.grey[600],
+            ),
+            activeItem: const Icon(
+              Icons.calculate_rounded,
+              color: Colors.white,
+            ),
+            itemLabel: 'Matematika',
+          ),
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.favorite_rounded,
+              color: Colors.grey[600],
+            ),
+            activeItem: const Icon(
+              Icons.favorite_rounded,
+              color: Colors.white,
+            ),
+            itemLabel: 'Kesehatan',
+          ),
+          BottomBarItem(
+            inActiveItem: Icon(
+              Icons.account_balance_wallet_rounded,
+              color: Colors.grey[600],
+            ),
+            activeItem: const Icon(
+              Icons.account_balance_wallet_rounded,
+              color: Colors.white,
+            ),
+            itemLabel: 'Finansial',
+          ),
+        ],
+        onTap: (index) {
+          setState(() {
+            _pageController.jumpToPage(index);
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildPage(Map<String, dynamic> pageData) {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            isDarkMode ? Colors.black : const Color(0xFF2A2D3E),
+            isDarkMode
+                ? Colors.black.withOpacity(0.8)
+                : const Color(0xFF2A2D3E).withOpacity(0.8),
+          ],
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              Text(
-                _pages[_selectedIndex]['title'],
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 30),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: GridView.count(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 15,
-                    crossAxisSpacing: 15,
-                    childAspectRatio: 0.85,
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 25),
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ..._pages[_selectedIndex]['items'].map(
-                        (item) => _buildMenuCard(
-                          context,
-                          item['title'],
-                          item['icon'],
-                          item['screen'],
-                          item['color'],
+                      Text(
+                        'Selamat Datang',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        pageData['title'],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
+                  IconButton(
+                    icon: Icon(
+                      Provider.of<ThemeProvider>(context).isDarkMode
+                          ? Icons.light_mode
+                          : Icons.dark_mode,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      Provider.of<ThemeProvider>(context, listen: false)
+                          .toggleTheme();
+                    },
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(13),
+                      child: Image.asset(
+                        'assets/profile.jpg',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+            // Content Area
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.only(top: 30, left: 20, right: 20),
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(35),
+                    topRight: Radius.circular(35),
+                  ),
+                ),
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 20,
+                  crossAxisSpacing: 20,
+                  childAspectRatio: 1.1,
+                  children: [
+                    ...pageData['items'].map(
+                      (item) => _buildMenuCard(
+                        context,
+                        item['title'],
+                        item['icon'],
+                        item['screen'],
+                        item['color'],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Colors.blue.shade800,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.swap_horiz),
-            label: 'Konversi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calculate),
-            label: 'Matematika',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Kesehatan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.attach_money),
-            label: 'Finansial',
-          ),
-        ],
       ),
     );
   }
@@ -304,24 +435,22 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget destination,
     Color color,
   ) {
+    final isDarkMode = Provider.of<ThemeProvider>(context).isDarkMode;
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: isDarkMode ? color.withOpacity(0.3) : color.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+      child: Material(
+        color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(25),
           onTap: () {
             Navigator.push(
               context,
@@ -329,40 +458,50 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           },
           child: Container(
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(25),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  color.withOpacity(0.8),
+                  color.withOpacity(0.9),
                   color,
                 ],
               ),
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
                     icon,
-                    size: 32,
+                    size: 30,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const Spacer(),
                 Text(
                   title,
-                  textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  width: 30,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ],
@@ -371,5 +510,11 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 }
